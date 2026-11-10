@@ -12,6 +12,8 @@
     summaries = "summaries"           # the folder beside each transcript that its summary goes in
     log_file = "..."                  # optional
     after_draft = ["python", "x.py"]  # optional: run after each draft, with a JSON report on stdin
+    dictation = ["claude", "clark"]   # optional: names an assistant is addressed by, and how transcripts
+                                      #   mishear them; lines dictated to it are put to you. [] turns it off
     timeout_minutes = 30
 
 Paths may use ~ and %VARIABLES%.
@@ -53,6 +55,7 @@ class Config:
     log_file: pathlib.Path = LOCAL / "meeting-summaries.log"
     after_draft: list = field(default_factory=list)
     timeout_minutes: int = 30
+    dictation: list | None = None   # None: the defaults in dictation.py
 
     def relative(self, path: pathlib.Path) -> str:
         return path.resolve().relative_to(self.workspace).as_posix()
@@ -96,7 +99,8 @@ def load(path: pathlib.Path | str | None = None) -> Config:
         include=list(raw.get("include", ["**"])), exclude=list(raw.get("exclude", [])),
         summaries=raw.get("summaries", "summaries"),
         log_file=_path(raw["log_file"], base) if raw.get("log_file") else LOCAL / "meeting-summaries.log",
-        after_draft=list(raw.get("after_draft", [])), timeout_minutes=int(raw.get("timeout_minutes", 30)))
+        after_draft=list(raw.get("after_draft", [])), timeout_minutes=int(raw.get("timeout_minutes", 30)),
+        dictation=[str(n).lower() for n in raw["dictation"]] if "dictation" in raw else None)
     for name in ("template",):
         value = getattr(config, name)
         if value and not value.exists():

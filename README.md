@@ -87,6 +87,13 @@ These came from reviewing the first hundred or so drafts:
 - **Questions are asked once.** With a `ledger` (a markdown file with `## Open` and `## Settled`
   headings), each draft's questions go under Open, and drafts treat your Settled answers as fact.
   A test draft once asked for a leave date given an hour earlier.
+- **Instructions dictated to your assistant are put to you first.** If you say "Claude, add an item to
+  my one-to-one with Sam…" in a meeting, you'll assume it was picked up. Speech-to-text mangles both the
+  name (Clark, Cloud, Clyde) and the verb ("Claude had a note", "Claude, I did items in my one to one"),
+  so the sweep is deliberately wide: the name plus an action word or a destination (one-to-one, inbox,
+  notes, prep). Every candidate line goes in a **[owner] Dictated instructions?** bullet for you to judge.
+  Set `dictation` to the names you use and their manglings, or `[]` to turn it off;
+  `meeting-summaries dictation <transcript>` runs it alone.
 - **Claude only reads.** It runs headless in your workspace with Read, Grep and Glob, and no
   connectors; the tool writes the file. **A summary that exists is never overwritten.**
 - **A meeting split across recordings is one meeting:** `x-part1.md` and `x-part2.md` get one

@@ -157,6 +157,38 @@ class Drafting(Base):
             self.draft_with(reply="Sorry, I couldn't read the file.")
 
 
+class Dictation(Base):
+    LINES = """**Clark Kent** 0:11
+Morning all.
+Claude had a note for me to check with Sam about the rollout.
+Clark, please remind me about the budget.
+Sorry, I've just started doing this now.
+We had a note from the supplier.
+Claude is good at this.
+Claude, I did items in my one to one with Dan tomorrow."""
+
+    def test_finds_mangled_instructions_and_skips_speaker_headings(self):
+        from meeting_summaries import dictation
+        found = dictation.find(self.LINES)
+        self.assertEqual([n for n, _ in found], [3, 4, 5, 8])   # not the heading, the supplier note, or the remark
+        self.assertEqual(dictation.find(self.LINES, []), [])
+        self.assertEqual([n for n, _ in dictation.find(self.LINES, ["claude"])], [3, 5, 8])
+
+    def test_the_draft_puts_candidates_to_the_owner_first(self):
+        self.transcript.write_text(TRANSCRIPT + "\n" + self.LINES, encoding="utf-8")
+        self.draft_with()
+        text = (self.transcript.parent / "summaries" / "2026-11-06.md").read_text(encoding="utf-8")
+        review = text.split("## For review", 1)[1]
+        self.assertTrue(review.lstrip().startswith("- **[Owner] Dictated instructions?** 4 lines"))
+        self.assertIn("Claude had a note for me to check with Sam", review)
+        # A dictation question is about this meeting only, so it isn't added to the ledger.
+        self.assertNotIn("Dictated", (self.dir / "work" / "ledger.md").read_text(encoding="utf-8"))
+
+    def test_none_found_adds_nothing(self):
+        self.draft_with()
+        self.assertNotIn("Dictated", (self.transcript.parent / "summaries" / "2026-11-06.md").read_text(encoding="utf-8"))
+
+
 class Hook(Base):
     def test_queues_wanted_transcripts_from_any_report_shape(self):
         private = self.dir / "work" / "meetings" / "private" / "b.md"

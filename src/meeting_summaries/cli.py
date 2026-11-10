@@ -5,6 +5,7 @@
     meeting-summaries hook                   for teams-transcripts' after_run: queue a draft of each new
                                              transcript, then start working through the queue
     meeting-summaries check <summary>...     check a summary's quotes against its transcript
+    meeting-summaries dictation <transcript>...   lines that may be instructions dictated to an assistant
     meeting-summaries autostart on           work through queued drafts every 15 minutes (off, status)
 """
 
@@ -19,7 +20,7 @@ import sys
 from claude_headless import queue
 from win_background import NO_WINDOW, logger, notify
 
-from . import __version__, config as cfg, draft, quote_check
+from . import __version__, config as cfg, dictation, draft, quote_check
 
 
 def main(argv: list | None = None) -> int:
@@ -38,6 +39,8 @@ def main(argv: list | None = None) -> int:
     sub.add_parser("hook", help="queue drafts of the transcripts in the JSON on stdin, then start the queue")
     p = sub.add_parser("check", help="check summaries' quotes against their transcripts")
     p.add_argument("summaries", nargs="+", type=pathlib.Path)
+    p = sub.add_parser("dictation", help="lines that may be dictated instructions")
+    p.add_argument("transcripts", nargs="+", type=pathlib.Path)
     p = sub.add_parser("autostart", help="work through queued drafts every 15 minutes")
     p.add_argument("action", choices=["on", "off", "status"])
     args = parser.parse_args(argv)
@@ -47,6 +50,17 @@ def main(argv: list | None = None) -> int:
         return 0
     if args.command == "check":
         return _check(args.summaries)
+    if args.command == "dictation":
+        try:
+            names = cfg.load(args.config).dictation
+        except (FileNotFoundError, ValueError):
+            names = None
+        for path in args.transcripts:
+            found = dictation.find(path.read_text(encoding="utf-8"), names)
+            print(f"{path}: {len(found)} candidate(s)")
+            for n, line in found:
+                print(f"  {n}: {line}")
+        return 0
     if args.command == "autostart":   # the queue belongs to the seat, so it's claude-headless's task
         from claude_headless.cli import main as headless
         return headless(["autostart", args.action])

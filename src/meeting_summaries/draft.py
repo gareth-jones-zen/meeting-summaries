@@ -7,6 +7,8 @@
 - **A summary that already exists is never overwritten**, draft or finished.
 - **Every quote is checked against the transcript** (quote_check.py), and the result goes at the top of
   "For review", so the reviewer checks only the quotes that need it.
+- **Lines that may be instructions dictated to an assistant** ("Claude, add an item...") are put to the
+  owner at the top of "For review" (dictation.py): a person judges every one.
 - **Questions for the owner go in the ledger**, if there is one, so the next draft doesn't ask them again.
 - **At the usage limit the draft is queued** (claude-headless) and notified once per limit.
 """
@@ -23,7 +25,7 @@ import sys
 from claude_headless import LimitReached, queue, run
 from win_background import NO_WINDOW, notify
 
-from . import prompt, quote_check
+from . import dictation, prompt, quote_check
 from .config import Config
 
 PART = re.compile(r"^(?P<base>.+)-part(?P<n>\d+)$")
@@ -63,6 +65,20 @@ def with_quote_check(text: str, transcripts: list) -> str:
     if text[at:].startswith("## "):
         at = len(text[:at].rstrip("\n")) + 1
     return text[:at] + bullet + text[at:]
+
+
+def with_dictation(text: str, transcripts: list, config: Config) -> tuple:
+    """(the draft with a dictation bullet first in "For review", the candidates)."""
+    names = dictation.NAMES if config.dictation is None else config.dictation
+    found = [(f"{p.name}:{n}" if len(transcripts) > 1 else n, line)
+             for p in transcripts for n, line in dictation.find(p.read_text(encoding="utf-8"), names)]
+    bullet = dictation.bullet(found, config.owner, names)
+    if not bullet:
+        return text, found
+    heading = re.search(r"^## For review[ \t]*\n\n?", text, re.M)
+    if not heading:
+        return text.replace("\n## Purpose", f"\n## For review\n\n{bullet}\n## Purpose", 1), found
+    return text[:heading.end()] + bullet + text[heading.end():], found
 
 
 def questions(text: str, owner: str) -> list:
@@ -125,6 +141,7 @@ def write_draft(config: Config, transcript: pathlib.Path, log, out: pathlib.Path
     if start < 0 or "# [DRAFT]" not in text:
         raise RuntimeError("the reply wasn't a draft summary: " + text[:200])
     text = with_quote_check(text[start:].rstrip() + "\n", every)
+    text, dictated = with_dictation(text, every, config)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(text, encoding="utf-8")
     added = 0 if out else add_to_ledger(config, text, target)
@@ -132,7 +149,8 @@ def write_draft(config: Config, transcript: pathlib.Path, log, out: pathlib.Path
         + (f"; {added} question(s) added to the ledger" if added else "") + ")")
     if config.after_draft and out is None:
         report = {"transcript": rel[0], "transcripts": rel, "summary": config.relative(target),
-                  "questions": questions(text, config.owner), "session": result.get("session_id")}
+                  "questions": questions(text, config.owner), "session": result.get("session_id"),
+                  "dictation": [{"line": n, "text": line} for n, line in dictated]}
         try:
             done = subprocess.run(config.after_draft, input=json.dumps(report), text=True, cwd=config.path.parent,
                                   capture_output=True, timeout=300, creationflags=NO_WINDOW)
