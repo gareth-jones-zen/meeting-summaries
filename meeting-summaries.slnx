@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MeetingSummaries.Background/MeetingSummaries.Background.csproj" />
+    <Project Path="src/MeetingSummaries.Console/MeetingSummaries.Console.csproj" />
+    <Project Path="src/MeetingSummaries/MeetingSummaries.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MeetingSummaries.Tests/MeetingSummaries.Tests.csproj" />
+  </Folder>
+</Solution>

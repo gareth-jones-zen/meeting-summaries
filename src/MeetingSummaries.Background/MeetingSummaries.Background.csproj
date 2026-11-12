@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>meeting-summaries-background</AssemblyName>
+    <RootNamespace>MeetingSummaries</RootNamespace>
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MeetingSummaries\MeetingSummaries.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,3 +1,8 @@
+> **The .NET port is on this branch (`dotnet`).** It becomes `meeting-summaries.exe` and
+> `meeting-summaries-background.exe` (Native AOT, nothing to install first). The text below still describes the
+> Python meeting-summaries 0.2.0 (tag `v0.2.0`), which is what runs until the switch-over; the port does the
+> same, and the differences are listed under **The .NET port** at the end.
+
 # meeting-summaries
 
 A draft summary of each meeting transcript, written by Claude Code for you to review: purpose,
@@ -102,10 +107,65 @@ These came from reviewing the first hundred or so drafts:
   `autostart on` works through the queue every 15 minutes, and so does the hook whenever a new
   transcript arrives.
 
-## Tests
+## The .NET port
+
+A port of meeting-summaries 0.2.0 to .NET 11, published with Native AOT: `meeting-summaries.exe` (a console
+program, every command) and `meeting-summaries-background.exe` (the same, with no window: for hooks and the
+autostart task). Same settings file, same commands, same drafts.
+
+### Building
+
+It uses three projects from [background-tools-lib](https://github.com/gareth-jones-zen/background-tools-lib)
+(ClaudeHeadless, WinBackground, PyCompat), as a **sibling checkout**:
 
 ```
-python -m unittest discover -s tests
+source/repos/
+  background-tools-lib/      (branch claude-headless, until it's merged)
+  meeting-summaries/         (this repo, branch dotnet)
 ```
 
-No test calls Claude.
+```
+dotnet build -c Release
+dotnet test -c Release
+dotnet publish src/MeetingSummaries.Console -c Release -r win-x64 -o out
+dotnet publish src/MeetingSummaries.Background -c Release -r win-x64 -o out
+```
+
+Native AOT needs the Visual Studio C++ build tools; from Git Bash, put
+`C:\Program Files (x86)\Microsoft Visual Studio\Installer` on the `PATH` first. The tests use xunit v3 on the
+Microsoft Testing Platform, with synthetic transcripts only, and never run Claude: drafting takes an
+`IClaudeRunner`, and the tests give it a fake.
+
+### Checked against the Python version
+
+Before the switch, the port was run beside the Python 0.2.0 on a real workspace (read only), with `claude` replaced
+by a stand-in that records what it's sent and replies with a recorded draft:
+
+| What | How | Result |
+|---|---|---|
+| The dictation sweep | `dictation` over every transcript, 328 files | Identical output; 129 candidate lines |
+| The quote check | `check` on every summary against its transcripts, 124 summaries | Identical output; 4,110 quotes, 99 to verify |
+| The prompt | the bytes sent to `claude` on stdin, and its arguments, for 41 transcripts (2 split) | Byte-identical |
+| Post-processing | `draft --out` with a recorded reply (existing summaries, in four shapes: with and without "For review", fenced, with a preamble) | Byte-identical drafts and log lines |
+| The review ledger | two drafts into a copy of a real ledger, with a question already in it | Byte-identical ledger, summaries, log and after_draft report |
+| The usage limit | a limit on stderr, then a second run while it's in force | Identical exit codes, log lines and `limit.json` |
+
+Python's own behaviour is reproduced where it shows in the output: `str.splitlines` and `str.strip` (which know
+more line breaks and spaces than .NET), `\b` and `\s` in regular expressions (Python's word characters don't
+include combining marks), slices counted in code points, `difflib.SequenceMatcher` (ported, ties included), the
+`round-half-even` percentages, text-mode files (written with CRLF), and `Path.resolve()` (the case on disk).
+
+### Deliberate differences
+
+- **`run-queue` is a command here.** Python's hook started `python -m claude_headless run-queue`; an exe can't
+  rely on another being installed beside it, so `meeting-summaries run-queue` does the same job (the queue is the
+  seat's, so it runs every tool's jobs). `autostart on` registers the same task name as Python's,
+  `claude-headless run-queue`, running `meeting-summaries-background.exe run-queue`.
+- **A queued draft runs `meeting-summaries.exe --config ... draft ...`**, not `python -m meeting_summaries`. The
+  queue file is shared with the Python tools while they move across, and either runner can run either kind of job.
+- **Output to a file or pipe is UTF-8**, whatever the console's code page.
+- **Errors are reported, not raised:** a summary with no `transcript:` field, or a file that can't be read, stops
+  `check` with a one-line message (exit 1) rather than a traceback. A split meeting's file that doesn't fit the
+  `-partN` pattern (`x-part1-notes.md`) is left out rather than stopping the draft.
+- **The settings file is read by Tomlyn**, so a malformed file's message differs from Python's.
+- **The version is 0.3.0.**

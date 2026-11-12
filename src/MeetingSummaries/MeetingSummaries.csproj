@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Drafting a reviewed summary of each meeting transcript with Claude Code. Port of meeting-summaries 0.2.0. -->
+  <ItemGroup>
+    <PackageReference Include="Tomlyn" Version="2.11.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(BackgroundToolsLib)src\ClaudeHeadless\ClaudeHeadless.csproj" />
+    <ProjectReference Include="$(BackgroundToolsLib)src\WinBackground\WinBackground.csproj" />
+    <ProjectReference Include="$(BackgroundToolsLib)src\PyCompat\PyCompat.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="MeetingSummaries.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,21 @@
+<Project>
+  <!-- Shared by every project. The exes are published with Native AOT, so everything is AOT- and trim-checked. -->
+  <PropertyGroup>
+    <TargetFramework>net11.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Version>0.3.0-dev</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Authors>Gareth Jones</Authors>
+    <RepositoryUrl>https://github.com/gareth-jones-zen/meeting-summaries</RepositoryUrl>
+    <!-- background-tools-lib, checked out beside this repo (see the README). -->
+    <BackgroundToolsLib>$(MSBuildThisFileDirectory)..\background-tools-lib\</BackgroundToolsLib>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+</Project>

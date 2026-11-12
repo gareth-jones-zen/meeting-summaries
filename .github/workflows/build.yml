@@ -1,0 +1,38 @@
+name: build
+
+on:
+  push:
+    branches: [dotnet, main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: meeting-summaries
+      # The shared libraries, as a sibling checkout (see the README). ClaudeHeadless is on background-tools-lib's
+      # claude-headless branch until that's merged; then this ref goes.
+      - uses: actions/checkout@v5
+        with:
+          repository: gareth-jones-zen/background-tools-lib
+          ref: claude-headless
+          path: background-tools-lib
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: meeting-summaries/global.json
+      - name: Build and test
+        working-directory: meeting-summaries
+        run: dotnet test -c Release
+      - name: Publish (Native AOT)
+        working-directory: meeting-summaries
+        run: |
+          dotnet publish src/MeetingSummaries.Console -c Release -r win-x64 -o out
+          dotnet publish src/MeetingSummaries.Background -c Release -r win-x64 -o out
+          Get-ChildItem out/*.exe | Format-Table Name, Length
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meeting-summaries-win-x64
+          path: meeting-summaries/out/*.exe
