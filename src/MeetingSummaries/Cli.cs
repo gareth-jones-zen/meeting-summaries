@@ -18,7 +18,9 @@ namespace MeetingSummaries;
 ///     meeting-summaries run-queue              work through queued drafts now (what the hook and the task run)</summary>
 public static class Cli
 {
-    public const string Version = "0.3.0";
+    /// <summary>From the build (Directory.Build.props, or the release's -p:Version from its tag).</summary>
+    public static readonly string Version = System.Reflection.CustomAttributeExtensions
+        .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(Cli).Assembly)?.InformationalVersion ?? "unknown";
 
     public const string Usage = """
         usage: meeting-summaries [-h] [--version] [--config CONFIG] {config,draft,hook,check,dictation,autostart,run-queue} ...

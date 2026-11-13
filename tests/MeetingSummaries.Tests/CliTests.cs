@@ -101,7 +101,8 @@ public class CliTests : IDisposable
         Assert.Equal(2, Run("", "autostart", "sideways").Code);
         Assert.Equal(2, Run("", "--config").Code);
         Assert.Equal(2, Run("", "--config", Path.Combine(ws.Dir, "none.toml"), "hook").Code);
-        Assert.Equal((0, "0.3.0\n", ""), Run("", "--version"));
+        Assert.Equal((0, Cli.Version + "\n", ""), Run("", "--version"));   // the build's version
+        Assert.NotEqual("unknown", Cli.Version);
     }
 
     [Fact]
