@@ -12,8 +12,9 @@
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Authors>Gareth Jones</Authors>
     <RepositoryUrl>https://github.com/gareth-jones-zen/meeting-summaries</RepositoryUrl>
-    <!-- background-tools-lib, checked out beside this repo (see the README). -->
-    <BackgroundToolsLib>$(MSBuildThisFileDirectory)..\background-tools-lib\</BackgroundToolsLib>
+    <!-- background-tools-lib, checked out beside this repo (see the README); another checkout can be named with
+         -p:BackgroundToolsLib=<folder>\ -->
+    <BackgroundToolsLib Condition="'$(BackgroundToolsLib)' == ''">$(MSBuildThisFileDirectory)..\background-tools-lib\</BackgroundToolsLib>
   </PropertyGroup>
   <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
     <IsAotCompatible>true</IsAotCompatible>

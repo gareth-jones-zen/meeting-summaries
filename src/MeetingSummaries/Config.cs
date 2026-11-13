@@ -61,7 +61,7 @@ public sealed class Config
     /// <summary>The path relative to the workspace, as a posix path. Throws ArgumentException (Python's ValueError)
     /// for a path outside it.</summary>
     public string Relative(string path) =>
-        Paths.RelativeTo(Paths.Resolve(path), Workspace) ?? throw new ArgumentException($"{path} is not in the subpath of {Workspace}");
+        Paths.RelativeTo(PyPath.Resolve(path), Workspace) ?? throw new ArgumentException($"{path} is not in the subpath of {Workspace}");
 
     /// <summary>Whether `hook` drafts this transcript: inside the workspace, matching include and not exclude, and
     /// not itself a summary.</summary>
@@ -76,7 +76,7 @@ public sealed class Config
         {
             return false;
         }
-        if ($"/{rel}".Contains($"/{Summaries}/", StringComparison.Ordinal) || Paths.Lower(Paths.Suffix(transcript)) is not (".md" or ".txt"))
+        if ($"/{rel}".Contains($"/{Summaries}/", StringComparison.Ordinal) || PyStr.Lower(Paths.Suffix(transcript)) is not (".md" or ".txt"))
             return false;
         return Include.Any(g => Paths.FnMatch(rel, g)) && !Exclude.Any(g => Paths.FnMatch(rel, g));
     }
@@ -90,7 +90,7 @@ public sealed class Config
     private static string PathValue(string value, string baseFolder, Func<string, string?> env)
     {
         var expanded = PyPath.ExpandVars(PyPath.ExpandUser(value, env), env);
-        return Paths.Resolve(PyPath.IsAbsolute(expanded) ? expanded : PyPath.ResolveAgainst(baseFolder, expanded));
+        return PyPath.Resolve(PyPath.IsAbsolute(expanded) ? expanded : PyPath.ResolveAgainst(baseFolder, expanded));
     }
 
     /// <summary>Read the settings: the path given, else MEETING_SUMMARIES_CONFIG, else the default. Throws ConfigError.</summary>
@@ -98,7 +98,7 @@ public sealed class Config
     {
         env ??= Environment.GetEnvironmentVariable;
         var given = !string.IsNullOrEmpty(path) ? path : env("MEETING_SUMMARIES_CONFIG") is { Length: > 0 } e ? e : DefaultPath(env);
-        var full = Paths.Resolve(given);
+        var full = PyPath.Resolve(given);
         if (!File.Exists(full))
             throw new ConfigError($"No settings file at {full}. Run `meeting-summaries config` to create one.", missing: true);
         TomlTable raw;
@@ -144,7 +144,7 @@ public sealed class Config
             LogFile = Truthy("log_file") ? PathValue(Text("log_file", ""), folder, env) : DefaultLog(env),
             AfterDraft = List("after_draft", []),
             TimeoutMinutes = raw.TryGetValue("timeout_minutes", out var t) ? Int(t) : 30,
-            Dictation = raw.TryGetValue("dictation", out var d) ? List("dictation", []).Select(Paths.Lower).ToList() : null,
+            Dictation = raw.TryGetValue("dictation", out var d) ? List("dictation", []).Select(PyStr.Lower).ToList() : null,
         };
         if (config.TemplateFile is { } template && !File.Exists(template))
             throw new ConfigError($"template in {full} names a file that isn't there: {template}");

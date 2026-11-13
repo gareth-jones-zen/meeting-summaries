@@ -40,7 +40,7 @@ public class SettingsTests : IDisposable
     [Fact]
     public void Settings_resolve_paths_and_defaults()
     {
-        Assert.Equal(Paths.Resolve(ws.Work), ws.Config.Workspace);
+        Assert.Equal(PyPath.Resolve(ws.Work), ws.Config.Workspace);
         Assert.Equal(Path.Combine(ws.Dir, "log.txt"), ws.Config.LogFile);
         Assert.Equal("opus", ws.Config.Model);
         Assert.Equal(30, ws.Config.TimeoutMinutes);
@@ -242,6 +242,15 @@ public class DictationTests : IDisposable
     }
 
     [Fact]
+    public void Ignoring_case_folds_as_pythons()
+    {
+        // Python's re.I also matches the long s for "s", and dotless and dotted i for "i"; .NET's IgnoreCase doesn't.
+        // What Python 3.14 found: lines 1, 2, 4 and 5.
+        var found = Dictation.Find("Claude, plea\u017fe.\nClaude \u0131tem\nthe cloud is fine\nCLAUDE: add it\nmy \u0130nbox");
+        Assert.Equal(["1", "2", "4", "5"], found.Select(f => f.Line));
+    }
+
+    [Fact]
     public void The_draft_puts_candidates_to_the_owner_first()
     {
         Workspace.Write(ws.TranscriptPath, Workspace.Transcript + "\n" + Lines);
@@ -377,7 +386,7 @@ public class PathTests
         try
         {
             Directory.CreateDirectory(Path.Combine(dir, "Meetings"));
-            var resolved = Paths.Resolve(Path.Combine(dir.ToUpperInvariant(), "meetings", "not-yet.md"));
+            var resolved = PyPath.Resolve(Path.Combine(dir.ToUpperInvariant(), "meetings", "not-yet.md"));
             Assert.EndsWith(@"\Meetings\not-yet.md", resolved);
             Assert.Contains(@"\Ms-Case-", resolved);
         }
@@ -390,7 +399,7 @@ public class PathTests
     [Fact]
     public void Title_as_python()
     {
-        Assert.Equal("Claude", Re.Title("claude"));
-        Assert.Equal("O'Brien 3D", Re.Title("o'brien 3d"));
+        Assert.Equal("Claude", Dictation.Title("claude"));
+        Assert.Equal("O'Brien 3D", Dictation.Title("o'brien 3d"));
     }
 }

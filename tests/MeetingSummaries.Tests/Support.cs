@@ -54,7 +54,7 @@ public sealed class Workspace : IDisposable
 
     public const string LedgerText = "# Review ledger\n\n## Open\n\n- 2026-11-01 \u00b7 [x](x) \u00b7 an older question\n\n## Settled\n\n- leave: 16-31 Dec\n";
 
-    public string Dir { get; } = Paths.Resolve(Path.Combine(Path.GetTempPath(), "meeting-summaries-tests-" + Guid.NewGuid().ToString("N")));
+    public string Dir { get; } = PyPath.Resolve(Path.Combine(Path.GetTempPath(), "meeting-summaries-tests-" + Guid.NewGuid().ToString("N")));
     public string Work => Path.Combine(Dir, "work");
     public string TranscriptPath => Path.Combine(Work, "meetings", "alex", "2026-11-06.md");
     public string SummaryPath => Path.Combine(Work, "meetings", "alex", "summaries", "2026-11-06.md");

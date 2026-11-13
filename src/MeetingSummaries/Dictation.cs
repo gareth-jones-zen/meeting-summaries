@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+using System.Text;
 using PyCompat;
 
 namespace MeetingSummaries;
@@ -17,16 +17,17 @@ public static class Dictation
 {
     public static readonly IReadOnlyList<string> Names = ["claude", "clark", "cloud", "clawed", "claw", "clyde"];
 
-    private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
-
-    private static readonly Regex Action = new(Re.Word("(add|added|had|note|item|action|remind|inbox|please)"), Options);
+    // The Python's patterns, word for word, through PyCompat's PyRegex (Python's \b and \w, and the extra letters
+    // Python's case-insensitive matching folds together: dotted and dotless i, and the long s).
+    private static readonly PyRegex Action = PyRegex.Get(@"\b(add|added|had|note|item|action|remind|inbox|please)\b", ignoreCase: true);
 
     // Where the item should go. The name plus a destination catches a mangled verb: on 10 Nov 2026, "Claude, I did
     // items in my one to one with Dan" and "Claude, I don't have one to one with John" were missed by the verbs
     // above. Across 326 transcripts it added those two and ten false positives.
-    private static readonly Regex Destination = new(Re.Word("(one[ -]to[ -]one|1[ :-]2[ :-]1|1:1|inbox|items|notes|actions|prep)"), Options);
+    private static readonly PyRegex Destination =
+        PyRegex.Get(@"\b(one[ -]to[ -]one|1[ :-]2[ :-]1|1:1|inbox|items|notes|actions|prep)\b", ignoreCase: true);
 
-    private static readonly Regex Phrase = new("add an? (item|note|action)|note to my action|my inbox|just started doing this", Options);
+    private static readonly PyRegex Phrase = PyRegex.Get("add an? (item|note|action)|note to my action|my inbox|just started doing this", ignoreCase: true);
 
     /// <summary>A candidate: its line number (or "file:line" across a split meeting's parts) and its text.</summary>
     public sealed record Found(string Line, string Text)
@@ -40,7 +41,7 @@ public static class Dictation
         names ??= Names;
         if (names.Count == 0)
             return [];
-        var trigger = new Regex(Re.Word("(" + string.Join("|", names.Select(Regex.Escape)) + ")"), Options);
+        var trigger = PyRegex.Get(@"\b(" + string.Join("|", names.Select(PyRegex.Escape)) + @")\b", ignoreCase: true);
         var found = new List<Found>();
         var number = 0;
         foreach (var line in PyStr.SplitLines(transcript))
@@ -62,9 +63,24 @@ public static class Dictation
         var lines = new List<string>
         {
             $"- **[{owner}] Dictated instructions?** {found.Count} line{(found.Count > 1 ? "s" : "")} in the transcript " +
-            $"may be addressed to {Re.Title(names[0])}. Were they meant as instructions, and are they done?",
+            $"may be addressed to {Title(names[0])}. Were they meant as instructions, and are they done?",
         };
         lines.AddRange(found.Select(f => $"  - line {f.Line}: *{f.Text}*"));
         return string.Join("\n", lines) + "\n";
+    }
+
+    /// <summary>str.title(): the first letter of each run of letters upper case, the rest lower. (PyCompat has no
+    /// str.title yet.)</summary>
+    internal static string Title(string text)
+    {
+        var result = new StringBuilder(text.Length);
+        var previousCased = false;
+        foreach (var c in text)
+        {
+            var d = previousCased ? char.ToLowerInvariant(c) : char.ToUpperInvariant(c);
+            result.Append(d);
+            previousCased = char.IsUpper(d) || char.IsLower(d) || char.GetUnicodeCategory(d) == System.Globalization.UnicodeCategory.TitlecaseLetter;
+        }
+        return result.ToString();
     }
 }

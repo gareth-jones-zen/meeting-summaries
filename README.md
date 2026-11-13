@@ -120,7 +120,7 @@ It uses three projects from [background-tools-lib](https://github.com/gareth-jon
 
 ```
 source/repos/
-  background-tools-lib/      (branch claude-headless, until it's merged)
+  background-tools-lib/      (branch main)
   meeting-summaries/         (this repo, branch dotnet)
 ```
 
@@ -130,6 +130,8 @@ dotnet test -c Release
 dotnet publish src/MeetingSummaries.Console -c Release -r win-x64 -o out
 dotnet publish src/MeetingSummaries.Background -c Release -r win-x64 -o out
 ```
+
+Another checkout of the library can be named with `-p:BackgroundToolsLib=<folder>\`.
 
 Native AOT needs the Visual Studio C++ build tools; from Git Bash, put
 `C:\Program Files (x86)\Microsoft Visual Studio\Installer` on the `PATH` first. The tests use xunit v3 on the
@@ -150,10 +152,13 @@ by a stand-in that records what it's sent and replies with a recorded draft:
 | The review ledger | two drafts into a copy of a real ledger, with a question already in it | Byte-identical ledger, summaries, log and after_draft report |
 | The usage limit | a limit on stderr, then a second run while it's in force | Identical exit codes, log lines and `limit.json` |
 
-Python's own behaviour is reproduced where it shows in the output: `str.splitlines` and `str.strip` (which know
-more line breaks and spaces than .NET), `\b` and `\s` in regular expressions (Python's word characters don't
-include combining marks), slices counted in code points, `difflib.SequenceMatcher` (ported, ties included), the
-`round-half-even` percentages, text-mode files (written with CRLF), and `Path.resolve()` (the case on disk).
+Python's own behaviour is reproduced where it shows in the output: `str.splitlines`, `str.strip` and `str.lower`
+(which know more line breaks and spaces than .NET, and lower a final sigma), `\b`, `\w` and `\s` in regular
+expressions (Python's word characters don't include combining marks; the dictation patterns run through PyRegex, so
+case-insensitive matching folds dotted and dotless i and the long s as Python's does), slices counted in code points,
+`difflib.SequenceMatcher` (ported, ties included), the `round-half-even` percentages, text-mode files (written with
+CRLF), and `Path.resolve()` (the case on disk). Most of these come from the library's PyCompat; `str.title` and
+`SequenceMatcher.get_matching_blocks` (with `autojunk=False`) are still here, as PyCompat doesn't have them.
 
 ### Deliberate differences
 

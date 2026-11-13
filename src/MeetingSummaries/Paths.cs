@@ -1,64 +1,13 @@
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using Microsoft.Win32.SafeHandles;
 using PyCompat;
 
 namespace MeetingSummaries;
 
-/// <summary>Paths as Python's pathlib handled them on Windows, where the difference shows: resolve() (the real path,
-/// with the case the folder has on disk), name, stem and suffix, relative_to, and fnmatch.</summary>
-public static partial class Paths
+/// <summary>Paths as Python's pathlib handled them on Windows, where the difference shows and PyCompat has nothing:
+/// name, stem and suffix, relative_to, and fnmatch. (resolve() is PyCompat's PyPath.Resolve.)</summary>
+public static class Paths
 {
-    /// <summary>Path.resolve(): absolute, "." and ".." gone, links followed and the case as it is on disk, as
-    /// ntpath.realpath gives it. A path that doesn't exist yet is resolved as far as it does, and the rest kept.</summary>
-    public static string Resolve(string path)
-    {
-        var full = Path.GetFullPath(path.Replace('/', '\\'));
-        var tail = new List<string>();
-        var current = full;
-        while (true)
-        {
-            if ((File.Exists(current) || Directory.Exists(current)) && FinalPath(current) is { } real)
-            {
-                tail.Reverse();
-                return PyPath.Pure(tail.Count == 0 ? real : Path.Combine([real, .. tail]));
-            }
-            var parent = Path.GetDirectoryName(current);
-            if (parent is null)
-                return PyPath.Pure(full);
-            tail.Add(Path.GetFileName(current));
-            current = parent;
-        }
-    }
-
-    private static unsafe string? FinalPath(string path)
-    {
-        if (!OperatingSystem.IsWindows())
-            return path;
-        // FILE_FLAG_BACKUP_SEMANTICS opens a folder too; no access is needed to ask for the name.
-        using var handle = CreateFileW(path, 0, FileShare.ReadWrite | FileShare.Delete, 0, FileMode.Open, 0x02000000, 0);
-        if (handle.IsInvalid)
-            return null;
-        const int size = 1024;
-        var buffer = stackalloc char[size];
-        var length = GetFinalPathNameByHandleW(handle, buffer, size, 0);
-        if (length == 0 || length >= size)
-            return null;
-        var text = new string(buffer, 0, (int)length);
-        if (text.StartsWith(@"\\?\UNC\", StringComparison.Ordinal))
-            return @"\\" + text[8..];
-        if (text.StartsWith(@"\\?\", StringComparison.Ordinal))
-            return text[4..];
-        return text;
-    }
-
-    [LibraryImport("kernel32.dll", EntryPoint = "CreateFileW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
-    private static partial SafeFileHandle CreateFileW(string name, uint access, FileShare share, nint security, FileMode mode, uint flags, nint template);
-
-    [LibraryImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", SetLastError = true)]
-    private static unsafe partial uint GetFinalPathNameByHandleW(SafeFileHandle handle, char* buffer, uint size, uint flags);
-
     /// <summary>PurePath.name.</summary>
     public static string Name(string path) => Path.GetFileName(PyPath.Pure(path));
 
@@ -100,13 +49,7 @@ public static partial class Paths
     public static bool FnMatch(string name, string pattern) =>
         Regex.IsMatch(NormCase(name), Translate(NormCase(pattern)), RegexOptions.Singleline | RegexOptions.CultureInvariant);
 
-    private static string NormCase(string text) => Lower(text).Replace('/', '\\');
-
-    /// <summary>str.lower(): .NET's invariant lower case, except U+0130, which Python lowers to two characters.</summary>
-    public static string Lower(string text)
-    {
-        return text.Contains('\u0130') ? text.Replace("\u0130", "i\u0307").ToLowerInvariant() : text.ToLowerInvariant();
-    }
+    private static string NormCase(string text) => PyStr.Lower(text).Replace('/', '\\');
 
     /// <summary>fnmatch.translate, as a .NET pattern matching the whole name.</summary>
     public static string Translate(string pattern)

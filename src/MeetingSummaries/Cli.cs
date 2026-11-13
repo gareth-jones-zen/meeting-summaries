@@ -128,7 +128,7 @@ public static class Cli
 
         if (command == "hook")
             return Hook(config, log, host);
-        var transcript = Paths.Resolve(transcriptArg!);
+        var transcript = PyPath.Resolve(transcriptArg!);
         if (!File.Exists(transcript) && !Directory.Exists(transcript))
         {
             log($"no such transcript: {transcript}");
@@ -136,7 +136,7 @@ public static class Cli
         }
         try
         {
-            var status = Draft.WriteDraft(config, transcript, log, host, outArg is null ? null : Paths.Resolve(outArg));
+            var status = Draft.WriteDraft(config, transcript, log, host, outArg is null ? null : PyPath.Resolve(outArg));
             return status == "limit" ? 1 : 0;
         }
         catch (Exception error)
@@ -166,7 +166,7 @@ public static class Cli
                 ? FirstTruthy(d["path"], d["file"]) ?? ""
                 : Py.Str(item))
             .Select(p => p.Length == 0 ? "." : p);
-        var wanted = paths.Where(p => (File.Exists(p) || Directory.Exists(p)) && config.Wanted(p)).Select(Paths.Resolve).ToList();
+        var wanted = paths.Where(p => (File.Exists(p) || Directory.Exists(p)) && config.Wanted(p)).Select(PyPath.Resolve).ToList();
         foreach (var transcript in wanted)
         {
             host.Queue.Add(host.DraftCommand(config, transcript), config.Workspace);

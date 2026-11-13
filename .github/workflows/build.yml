@@ -13,12 +13,10 @@ jobs:
       - uses: actions/checkout@v5
         with:
           path: meeting-summaries
-      # The shared libraries, as a sibling checkout (see the README). ClaudeHeadless is on background-tools-lib's
-      # claude-headless branch until that's merged; then this ref goes.
+      # The shared libraries (background-tools-lib's main), as a sibling checkout (see the README).
       - uses: actions/checkout@v5
         with:
           repository: gareth-jones-zen/background-tools-lib
-          ref: claude-headless
           path: background-tools-lib
       - uses: actions/setup-dotnet@v5
         with:

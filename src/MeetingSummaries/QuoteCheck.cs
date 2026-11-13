@@ -22,6 +22,9 @@ public static class QuoteCheck
 
     private const RegexOptions Options = RegexOptions.CultureInvariant;
 
+    // Python's \s (PyCompat's whitespace class: .NET's, plus U+001C to U+001F).
+    private const string S = "[" + PyStr.SpaceClass + "]";
+
     // ["“]([^"”\n*]{15,}?)["”], counting code points as Python does, so an emoji is one character.
     private static readonly Regex Quote = new(@"[""“]((?:[^""”\n*\uD800-\uDFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]){15,}?)[""”]", Options);
 
@@ -29,12 +32,12 @@ public static class QuoteCheck
     private static readonly Regex Split = new(@"…|\.\.\.|\[[^\]]*\]", Options);
 
     private static readonly Regex NotWord = new("[^a-z0-9 ]+", Options);
-    private static readonly Regex Spaces = new(Re.S + "+", Options);
-    private static readonly Regex Label = new(@"\*\*[^*\n]+\*\*" + Re.S + @"+\d+:\d+(?::\d+)?", Options);
+    private static readonly Regex Spaces = new(S + "+", Options);
+    private static readonly Regex Label = new(@"\*\*[^*\n]+\*\*" + S + @"+\d+:\d+(?::\d+)?", Options);
     private static readonly Regex Stamp = new(@"\d+:\d+(?::\d+)?", Options);
     private static readonly Regex Frontmatter = new(@"\A---\n.*?\n---\n", Options | RegexOptions.Singleline);
     private static readonly Regex TranscriptNotes = new("^## Transcript notes", Options | RegexOptions.Multiline);
-    private static readonly Regex TranscriptField = new(@"^transcript:" + Re.S + "*(.+)$", Options | RegexOptions.Multiline);
+    private static readonly Regex TranscriptField = new(@"^transcript:" + S + "*(.+)$", Options | RegexOptions.Multiline);
     private static readonly Regex MdName = new(@"[^\[\],]+\.md", Options);
 
     public static readonly IReadOnlySet<string> Negations = new HashSet<string>(StringComparer.Ordinal)
@@ -50,7 +53,7 @@ public static class QuoteCheck
     /// <summary>Lower case, apostrophes dropped (so "em's" and "EMs" agree), punctuation to spaces.</summary>
     public static string Norm(string text)
     {
-        text = Paths.Lower(text).Replace("’", "").Replace("‘", "").Replace("'", "");
+        text = PyStr.Lower(text).Replace("’", "").Replace("‘", "").Replace("'", "");
         text = NotWord.Replace(text, " ");
         return PyStr.Strip(Spaces.Replace(text, " "));
     }
@@ -145,7 +148,7 @@ public static class QuoteCheck
         var text = new System.Text.StringBuilder();
         foreach (Match name in MdName.Matches(field.Groups[1].Value))
         {
-            var path = Paths.Resolve(Path.Combine(Paths.Parent(summaryPath), PyStr.Strip(name.Value).Trim('\'', '"')));
+            var path = PyPath.Resolve(Path.Combine(Paths.Parent(summaryPath), PyStr.Strip(name.Value).Trim('\'', '"')));
             text.Append(PyStr.ReadText(path)).Append('\n');
         }
         return text.ToString();

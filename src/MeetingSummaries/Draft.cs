@@ -36,7 +36,10 @@ public static partial class Draft
     [GeneratedRegex(@"^## For review[ \t]*\n(.*?)(?=^## )", RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.Singleline)]
     private static partial Regex ReviewSection();
 
-    private static readonly Regex Fences = new(@"^```(?:markdown|md)?" + Re.S + @"*\n|\n```" + Re.S + "*$", RegexOptions.CultureInvariant);
+    // Python's \s (PyCompat's whitespace class: .NET's, plus U+001C to U+001F).
+    private const string S = "[" + PyStr.SpaceClass + "]";
+
+    private static readonly Regex Fences = new(@"^```(?:markdown|md)?" + S + @"*\n|\n```" + S + "*$", RegexOptions.CultureInvariant);
 
     /// <summary>Every part of a split meeting, in order (just the transcript if it isn't one).</summary>
     public static List<string> Parts(string transcript)
@@ -168,7 +171,7 @@ public static partial class Draft
     /// limit). out: write there instead, for comparing and testing: no ledger, no after_draft, never queued.</summary>
     public static string WriteDraft(Config config, string transcript, Action<string> log, SummariesHost host, string? output = null)
     {
-        transcript = Paths.Resolve(transcript);
+        transcript = PyPath.Resolve(transcript);
         var every = Parts(transcript);
         if (output is null && !string.Equals(every[0], transcript, StringComparison.OrdinalIgnoreCase) && File.Exists(every[0]))
         {
