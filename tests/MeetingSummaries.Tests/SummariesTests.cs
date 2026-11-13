@@ -185,7 +185,7 @@ public class DraftingTests : IDisposable
     [Fact]
     public void A_draft_with_no_for_review_gets_one()
     {
-        ws.Claude = new FakeClaude(Workspace.DraftReply.Replace("## For review\n\n- **[Owner]** Did you mean Monday the 9th?\n- **[Noted]** \"Sam\" taken to be Sam Jones.\n\n", ""));
+        ws.Claude = new FakeClaude(Workspace.DraftReply.ReplaceLineEndings("\n").Replace("## For review\n\n- **[Owner]** Did you mean Monday the 9th?\n- **[Noted]** \"Sam\" taken to be Sam Jones.\n\n", ""));
         ws.Draft();
         Assert.Contains("# [DRAFT] Catch-up\n\n## For review\n\n- **[Check] 1 of 2 quotes", Workspace.Read(ws.SummaryPath));
     }
