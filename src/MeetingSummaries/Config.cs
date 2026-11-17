@@ -35,8 +35,16 @@ public sealed class ConfigError(string message, bool missing = false) : Exceptio
 /// Paths may use ~ and %VARIABLES%.</summary>
 public sealed class Config
 {
+    /// <summary>Every top-level setting this file accepts (tables included): the ones a base file can supply.</summary>
+    public static readonly string[] KnownKeys =
+    [
+        "workspace", "model", "owner", "template", "style", "context", "ledger", "include", "exclude", "summaries", "log_file",
+        "after_draft", "review", "dictation", "timeout_minutes",
+    ];
+
     public const string Template = """
         # meeting-summaries settings. See the README.
+        # base = "base-config.toml"   # optional: settings shared with other tools
         # The folder holding your transcripts (teams-transcripts' output folder, say).
         workspace = "~/Documents/Meetings"
         owner = "You"
@@ -111,7 +119,15 @@ public sealed class Config
         TomlTable raw;
         try
         {
-            raw = TomlSerializer.Deserialize(PyStr.ReadText(full), TomlContext.Default.TomlTable) ?? new TomlTable();
+            // With the base file it names, if any: its [paths] are variables for the paths here (so env is replaced),
+            // and its settings this file knows and doesn't set are added.
+            var read = BaseSettings.Read(PyStr.ReadText(full), full, env, KnownKeys);
+            raw = read.Raw;
+            env = read.Env;
+        }
+        catch (FormatException error)
+        {
+            throw new ConfigError(error.Message);   // the base: missing, unreadable, or naming a base itself
         }
         catch (Exception error) when (error is not IOException and not UnauthorizedAccessException)
         {

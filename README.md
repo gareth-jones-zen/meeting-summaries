@@ -37,11 +37,27 @@ by queueing drafts until it resets, and notifies you only when something needs y
 after_run = ["meeting-summaries", "hook"]
 ```
 
+## Sharing settings with other tools: `base`
+
+Several tools built on the shared library can keep their common settings in one file, named at the top of each
+tool's settings with `base = "base-config.toml"` (relative to the settings file). Then:
+
+- **the base's `[paths]` are variables for this tool's paths**: `ROOT = "%LOCALAPPDATA%/tools"` there lets this file
+  say `log_file = "%ROOT%/meeting-summaries.log"`. They're looked up before the environment;
+- **its other settings that this tool knows and doesn't set itself are used** (such as `model` or `owner`). This
+  file's own value always wins. This tool signs in to nothing, so a base's `login_hint`, `tenant`, `msal_cache` and
+  `time_zone` are left out;
+- **a `[review]` in the base applies only if this file has that section too** (even empty), and its keys fill in the
+  ones this file leaves out: a shared queue `file` and `lock`, with `source` set here.
+
+The loader is background-tools-lib's `PyCompat.BaseSettings`. A missing or unreadable base is a settings error.
+
 ## Settings
 
 `%APPDATA%\meeting-summaries\config.toml` by default (`--config` or `MEETING_SUMMARIES_CONFIG`).
 
 ```toml
+base = "base-config.toml"            # optional: settings shared with other tools
 workspace = "~/Documents/Meetings"   # where your transcripts are; Claude reads here, and only reads
 owner = "Alex"                       # the label on the questions only you can answer
 model = "opus"
