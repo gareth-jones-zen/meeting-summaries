@@ -52,6 +52,10 @@ ledger = "review-ledger.md"          # optional: see below
 include = ["**"]                     # which transcripts the hook drafts
 exclude = ["**/one-to-ones/**"]      # and which it never does
 after_draft = ["powershell", "-File", "x.ps1"]   # optional: run after each draft, with a JSON report on stdin
+
+[review]                             # optional: note each draft in a review queue (see below)
+file = "%LOCALAPPDATA%/my-tools/review.json"
+source = "transcripts"
 ```
 
 **`style` is where your own rules go**: what stays out of a summary (health, family, small talk),
@@ -106,6 +110,19 @@ These came from reviewing the first hundred or so drafts:
 - **The usage limit doesn't lose drafts.** They're queued with the reset time and notified once;
   `autostart on` works through the queue every 15 minutes, and so does the hook whenever a new
   transcript arrives.
+
+## Review queue: `[review]`
+
+If something else (a transcript tool's hook, say) puts each new transcript in a **review queue**, with its path,
+`[review]` notes each draft against it: once a draft is written, every item under `source` whose `path` is one of the
+draft's transcripts (relative to the workspace, with forward slashes) gets `summary_draft`, the draft's path. So
+whatever reads the queue at the start of your day can say which transcripts have a draft waiting. It's
+[background-tools-lib](https://github.com/gareth-jones-zen/background-tools-lib)'s `ReviewQueue` (one JSON file, written
+under a lock between processes and replaced atomically), so the tools share the file.
+
+- A transcript with no item is no error, and nothing is added. A draft written with `--out` isn't noted.
+- It happens before `after_draft`; the two are independent. If the queue can't be written, the log says why and the
+  draft is kept. The log has only a count.
 
 ## The queue
 

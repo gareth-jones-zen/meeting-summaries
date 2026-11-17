@@ -167,6 +167,26 @@ public static partial class Draft
         return at < 0 ? text : text[..at] + replacement + text[(at + old.Length)..];
     }
 
+    /// <summary>[review]: each of the transcripts' items in the review queue (under the settings' source, with that
+    /// path) gets summary_draft, the draft's path. An item that isn't there is no error; nothing it does stops the
+    /// draft, and the log has only a count.</summary>
+    public static void Review(Config config, IReadOnlyList<string> transcripts, string summary, Action<string> log)
+    {
+        if (config.Review is not { } review)
+            return;
+        try
+        {
+            var queue = review.Open();
+            var noted = transcripts.Sum(path => queue.Update(review.Source, new JsonObject { ["path"] = path },
+                new JsonObject { ["summary_draft"] = summary }));
+            log($"  review: the draft noted against {noted} item(s) under {review.Source}");
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            log($"  review queue failed: {error.Message}");
+        }
+    }
+
     /// <summary>Draft and write. Returns "written", "exists", "waiting" (a later part), "queued" or "limit" (usage
     /// limit). out: write there instead, for comparing and testing: no ledger, no after_draft, never queued.</summary>
     public static string WriteDraft(Config config, string transcript, Action<string> log, SummariesHost host, string? output = null)
@@ -223,6 +243,8 @@ public static partial class Draft
         var added = output is not null ? 0 : AddToLedger(config, text, target, host.Today());
         log($"{rel[0]}: draft written to {(output is not null ? PyPath.Pure(target) : config.Relative(target))} ({Py.Str(result["num_turns"])} turns"
             + (added > 0 ? $"; {added} question(s) added to the ledger" : "") + ")");
+        if (output is null)
+            Review(config, rel, config.Relative(target), log);
         if (config.AfterDraft.Count > 0 && output is null)
         {
             var report = new JsonObject

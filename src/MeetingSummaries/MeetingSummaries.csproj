@@ -7,6 +7,7 @@
     <ProjectReference Include="$(BackgroundToolsLib)src\ClaudeHeadless\ClaudeHeadless.csproj" />
     <ProjectReference Include="$(BackgroundToolsLib)src\WinBackground\WinBackground.csproj" />
     <ProjectReference Include="$(BackgroundToolsLib)src\PyCompat\PyCompat.csproj" />
+    <ProjectReference Include="$(BackgroundToolsLib)src\ReviewQueue\ReviewQueue.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="MeetingSummaries.Tests" />
