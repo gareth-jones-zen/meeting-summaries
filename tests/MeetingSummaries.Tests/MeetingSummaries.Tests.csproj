@@ -8,6 +8,8 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <!-- The EA's summary-drafted.py hook run on synthetic cases: what [review] has to do the same. -->
+    <None Include="Golden\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MeetingSummaries\MeetingSummaries.csproj" />

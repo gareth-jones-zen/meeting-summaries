@@ -25,6 +25,9 @@ public sealed class ConfigError(string message, bool missing = false) : Exceptio
 ///     summaries = "summaries"           # the folder beside each transcript that its summary goes in
 ///     log_file = "..."                  # optional
 ///     after_draft = ["python", "x.py"]  # optional: run after each draft, with a JSON report on stdin
+///     [review]                          # optional: note each draft against its transcript's item in a review queue
+///     file = "%LOCALAPPDATA%/my-tools/review.json"
+///     source = "transcripts"
 ///     dictation = ["claude", "clark"]   # optional: names an assistant is addressed by, and how transcripts
 ///                                       #   mishear them; lines dictated to it are put to you. [] turns it off
 ///     timeout_minutes = 30
@@ -53,6 +56,10 @@ public sealed class Config
     public string Summaries { get; init; } = "summaries";
     public required string LogFile { get; init; }
     public IReadOnlyList<string> AfterDraft { get; init; } = [];
+
+    /// <summary>[review], or null: nothing noted. After each draft, the review queue's items for its transcripts get
+    /// summary_draft.</summary>
+    public ReviewQueue.ReviewSettings? Review { get; init; }
     public int TimeoutMinutes { get; init; } = 30;
 
     /// <summary>Null: the defaults in Dictation.Names. Empty: the sweep is off.</summary>
@@ -128,9 +135,22 @@ public sealed class Config
                 throw new ConfigError($"style in {full} names a file that isn't there: {stylePath}");
             style = PyStr.ReadText(stylePath);
         }
+        ReviewQueue.ReviewSettings? review = null;
+        if (raw.TryGetValue("review", out var reviewSection))
+        {
+            try
+            {
+                review = ReviewQueue.ReviewSettings.Read(reviewSection, full, value => PathValue(value, folder, env));
+            }
+            catch (FormatException error)
+            {
+                throw new ConfigError(error.Message);
+            }
+        }
         var config = new Config
         {
             Path = full,
+            Review = review,
             Workspace = workspace,
             Model = Text("model", "opus"),
             Owner = Text("owner", "You"),

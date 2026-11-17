@@ -1,0 +1,301 @@
+[
+ {
+  "name": "one",
+  "seed": {
+   "items": [
+    {
+     "id": "aaaa0001",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "arrived": "2026-11-06T10:00:00",
+     "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+     "summary_needed": true,
+     "dictation": [],
+     "title": "meetings/catch-ups/rich-evans/2026-11-06.md"
+    },
+    {
+     "id": "aaaa0002",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "arrived": "2026-11-06T10:00:00",
+     "path": "meetings/series/smt/2026-11-06-part2.md",
+     "summary_needed": true,
+     "dictation": [],
+     "title": "x"
+    },
+    {
+     "id": "aaaa0003",
+     "source": "preps",
+     "type": "prep",
+     "added": "2026-11-06T10:00:00",
+     "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+     "title": "not a transcript item"
+    },
+    {
+     "id": "aaaa0004",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "path": "other.md",
+     "title": "other"
+    }
+   ]
+  },
+  "report": {
+   "transcript": "meetings/catch-ups/rich-evans/2026-11-06.md",
+   "transcripts": [
+    "meetings/catch-ups/rich-evans/2026-11-06.md"
+   ],
+   "summary": "meetings/catch-ups/rich-evans/summaries/2026-11-06.md",
+   "questions": [],
+   "session": "s",
+   "dictation": []
+  },
+  "commits": [],
+  "status": [],
+  "notes": [],
+  "items": [
+   {
+    "id": "aaaa0001",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "arrived": "2026-11-06T10:00:00",
+    "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+    "summary_needed": true,
+    "dictation": [],
+    "title": "meetings/catch-ups/rich-evans/2026-11-06.md",
+    "summary_draft": "meetings/catch-ups/rich-evans/summaries/2026-11-06.md"
+   },
+   {
+    "id": "aaaa0002",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "arrived": "2026-11-06T10:00:00",
+    "path": "meetings/series/smt/2026-11-06-part2.md",
+    "summary_needed": true,
+    "dictation": [],
+    "title": "x"
+   },
+   {
+    "id": "aaaa0003",
+    "source": "preps",
+    "type": "prep",
+    "added": "2026-11-06T10:00:00",
+    "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+    "title": "not a transcript item"
+   },
+   {
+    "id": "aaaa0004",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "path": "other.md",
+    "title": "other"
+   }
+  ]
+ },
+ {
+  "name": "parts",
+  "seed": {
+   "items": [
+    {
+     "id": "aaaa0001",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "arrived": "2026-11-06T10:00:00",
+     "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+     "summary_needed": true,
+     "dictation": [],
+     "title": "meetings/catch-ups/rich-evans/2026-11-06.md"
+    },
+    {
+     "id": "aaaa0002",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "arrived": "2026-11-06T10:00:00",
+     "path": "meetings/series/smt/2026-11-06-part2.md",
+     "summary_needed": true,
+     "dictation": [],
+     "title": "x"
+    },
+    {
+     "id": "aaaa0003",
+     "source": "preps",
+     "type": "prep",
+     "added": "2026-11-06T10:00:00",
+     "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+     "title": "not a transcript item"
+    },
+    {
+     "id": "aaaa0004",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "path": "other.md",
+     "title": "other"
+    }
+   ]
+  },
+  "report": {
+   "transcript": "meetings/series/smt/2026-11-06-part1.md",
+   "transcripts": [
+    "meetings/series/smt/2026-11-06-part1.md",
+    "meetings/series/smt/2026-11-06-part2.md"
+   ],
+   "summary": "meetings/series/smt/summaries/2026-11-06.md",
+   "questions": [
+    "q"
+   ],
+   "session": "s",
+   "dictation": []
+  },
+  "commits": [],
+  "status": [],
+  "notes": [],
+  "items": [
+   {
+    "id": "aaaa0001",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "arrived": "2026-11-06T10:00:00",
+    "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+    "summary_needed": true,
+    "dictation": [],
+    "title": "meetings/catch-ups/rich-evans/2026-11-06.md"
+   },
+   {
+    "id": "aaaa0002",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "arrived": "2026-11-06T10:00:00",
+    "path": "meetings/series/smt/2026-11-06-part2.md",
+    "summary_needed": true,
+    "dictation": [],
+    "title": "x",
+    "summary_draft": "meetings/series/smt/summaries/2026-11-06.md"
+   },
+   {
+    "id": "aaaa0003",
+    "source": "preps",
+    "type": "prep",
+    "added": "2026-11-06T10:00:00",
+    "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+    "title": "not a transcript item"
+   },
+   {
+    "id": "aaaa0004",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "path": "other.md",
+    "title": "other"
+   }
+  ]
+ },
+ {
+  "name": "no-item",
+  "seed": {
+   "items": [
+    {
+     "id": "aaaa0001",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "arrived": "2026-11-06T10:00:00",
+     "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+     "summary_needed": true,
+     "dictation": [],
+     "title": "meetings/catch-ups/rich-evans/2026-11-06.md"
+    },
+    {
+     "id": "aaaa0002",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "arrived": "2026-11-06T10:00:00",
+     "path": "meetings/series/smt/2026-11-06-part2.md",
+     "summary_needed": true,
+     "dictation": [],
+     "title": "x"
+    },
+    {
+     "id": "aaaa0003",
+     "source": "preps",
+     "type": "prep",
+     "added": "2026-11-06T10:00:00",
+     "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+     "title": "not a transcript item"
+    },
+    {
+     "id": "aaaa0004",
+     "source": "transcripts",
+     "type": "transcript",
+     "added": "2026-11-06T10:00:00",
+     "path": "other.md",
+     "title": "other"
+    }
+   ]
+  },
+  "report": {
+   "transcript": "nowhere.md",
+   "transcripts": [
+    "nowhere.md"
+   ],
+   "summary": "s.md",
+   "questions": [],
+   "session": null,
+   "dictation": []
+  },
+  "commits": [],
+  "status": [],
+  "notes": [],
+  "items": [
+   {
+    "id": "aaaa0001",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "arrived": "2026-11-06T10:00:00",
+    "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+    "summary_needed": true,
+    "dictation": [],
+    "title": "meetings/catch-ups/rich-evans/2026-11-06.md"
+   },
+   {
+    "id": "aaaa0002",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "arrived": "2026-11-06T10:00:00",
+    "path": "meetings/series/smt/2026-11-06-part2.md",
+    "summary_needed": true,
+    "dictation": [],
+    "title": "x"
+   },
+   {
+    "id": "aaaa0003",
+    "source": "preps",
+    "type": "prep",
+    "added": "2026-11-06T10:00:00",
+    "path": "meetings/catch-ups/rich-evans/2026-11-06.md",
+    "title": "not a transcript item"
+   },
+   {
+    "id": "aaaa0004",
+    "source": "transcripts",
+    "type": "transcript",
+    "added": "2026-11-06T10:00:00",
+    "path": "other.md",
+    "title": "other"
+   }
+  ]
+ }
+]
