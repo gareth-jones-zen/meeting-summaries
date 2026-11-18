@@ -237,6 +237,8 @@ public class DictationTests : IDisposable
         Assert.Single(Dictation.Find("Claude\u0301 add it"));
         Assert.Empty(Dictation.Find("Claudes adding"));
         Assert.Single(Dictation.Find("CLAUDE: 1:1 tomorrow"));
+        Assert.Single(Dictation.Find("Clark I had waiting for from Dan on the tags"));   // a waiting-for, verb mangled
+        Assert.Single(Dictation.Find("put a Clark reminder to go and chase up"));
         Assert.Single(Dictation.Find("x\u2028Claude add"));   // a line break Python's splitlines knows
         Assert.Equal("2", Dictation.Find("x\u2028Claude add")[0].Line);
     }

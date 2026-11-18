@@ -23,9 +23,11 @@ public static class Dictation
 
     // Where the item should go. The name plus a destination catches a mangled verb: on 10 Nov 2026, "Claude, I did
     // items in my one to one with Dan" and "Claude, I don't have one to one with John" were missed by the verbs
-    // above. Across 326 transcripts it added those two and ten false positives.
+    // above. Across 326 transcripts it added those two and ten false positives. "waiting" and "chase" (1.3.0, 18 Nov
+    // 2026) are for a waiting-for list ("Claude, please add a waiting-for: ..."): across 275 transcripts they added
+    // six lines, one of them a real instruction ("put a Clark reminder to go and chase up").
     private static readonly PyRegex Destination =
-        PyRegex.Get(@"\b(one[ -]to[ -]one|1[ :-]2[ :-]1|1:1|inbox|items|notes|actions|prep)\b", ignoreCase: true);
+        PyRegex.Get(@"\b(one[ -]to[ -]one|1[ :-]2[ :-]1|1:1|inbox|items|notes|actions|prep|waiting|chase)\b", ignoreCase: true);
 
     private static readonly PyRegex Phrase = PyRegex.Get("add an? (item|note|action)|note to my action|my inbox|just started doing this", ignoreCase: true);
 

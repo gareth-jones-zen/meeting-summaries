@@ -116,7 +116,7 @@ These came from reviewing the first hundred or so drafts:
   my one-to-one with Sam…" in a meeting, you'll assume it was picked up. Speech-to-text mangles both the
   name (Clark, Cloud, Clyde) and the verb ("Claude had a note", "Claude, I did items in my one to one"),
   so the sweep is deliberately wide: the name plus an action word or a destination (one-to-one, inbox,
-  notes, prep). Every candidate line goes in a **[owner] Dictated instructions?** bullet for you to judge.
+  notes, prep, waiting, chase). Every candidate line goes in a **[owner] Dictated instructions?** bullet for you to judge.
   Set `dictation` to the names you use and their manglings, or `[]` to turn it off;
   `meeting-summaries dictation <transcript>` runs it alone.
 - **Claude only reads.** It runs headless in your workspace with Read, Grep and Glob, and no
