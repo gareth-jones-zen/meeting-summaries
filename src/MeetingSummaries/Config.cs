@@ -31,6 +31,14 @@ public sealed class ConfigError(string message, bool missing = false) : Exceptio
 ///     dictation = ["claude", "clark"]   # optional: names an assistant is addressed by, and how transcripts
 ///                                       #   mishear them; lines dictated to it are put to you. [] turns it off
 ///     timeout_minutes = 30
+///     hook_drafts = true                # optional: false, and `hook` queues no drafts (it still raises, below)
+///     raise_transcripts = ["meetings/**"]   # optional (1.4.0, needs [review]): files `hook` is given that it raises
+///                                       #   as "transcript" items, swept for dictation, with whether a draft is wanted
+///     [[raise]]                         # optional: files raised as items of their own instead, first match wins
+///     match = "**/review-form.md"       #   a glob, relative to workspace
+///     type = "review-paperwork"         #   the item's type
+///     sweep = false                     #   sweep it for dictation too
+///     note = "Add the review's row."    #   optional: a note on the item
 ///
 /// Paths may use ~ and %VARIABLES%.</summary>
 public sealed class Config
@@ -39,7 +47,7 @@ public sealed class Config
     public static readonly string[] KnownKeys =
     [
         "workspace", "model", "owner", "template", "style", "context", "ledger", "include", "exclude", "summaries", "log_file",
-        "after_draft", "review", "dictation", "timeout_minutes",
+        "after_draft", "review", "dictation", "timeout_minutes", "hook_drafts", "raise_transcripts", "raise",
     ];
 
     public const string Template = """
@@ -69,6 +77,15 @@ public sealed class Config
     /// summary_draft.</summary>
     public ReviewQueue.ReviewSettings? Review { get; init; }
     public int TimeoutMinutes { get; init; } = 30;
+
+    /// <summary>Whether `hook` queues drafts of the transcripts include wants (1.4.0: it can also only raise them).</summary>
+    public bool HookDrafts { get; init; } = true;
+
+    /// <summary>Globs (relative to workspace) of the files `hook` raises as "transcript" items (1.4.0, with [review]).</summary>
+    public IReadOnlyList<string> RaiseTranscripts { get; init; } = [];
+
+    /// <summary>[[raise]]: files `hook` raises as items of their own, checked before RaiseTranscripts, first match wins.</summary>
+    public IReadOnlyList<RaiseRule> Raise { get; init; } = [];
 
     /// <summary>Null: the defaults in Dictation.Names. Empty: the sweep is off.</summary>
     public IReadOnlyList<string>? Dictation { get; init; }
@@ -163,9 +180,31 @@ public sealed class Config
                 throw new ConfigError(error.Message);
             }
         }
+        var raise = new List<RaiseRule>();
+        if (raw.TryGetValue("raise", out var r))
+        {
+            if (r is not TomlTableArray rules)
+                throw new ConfigError($"{full}: raise should be [[raise]] tables: match, type, sweep, note");
+            foreach (var rule in rules)
+            {
+                foreach (var key in rule.Keys)
+                    if (key is not ("match" or "type" or "sweep" or "note"))
+                        throw new ConfigError($"{full}: [[raise]] has an unknown setting '{key}'");
+                if (!rule.TryGetValue("match", out var m) || m is not string { Length: > 0 } match
+                    || !rule.TryGetValue("type", out var ty) || ty is not string { Length: > 0 } type)
+                    throw new ConfigError($"{full}: each [[raise]] needs match (a glob) and type");
+                var sweep = rule.TryGetValue("sweep", out var sw) && (sw is bool b ? b : throw new ConfigError($"{full}: [[raise]] sweep should be true or false"));
+                raise.Add(new RaiseRule(match, type, sweep, rule.TryGetValue("note", out var n) ? Str(n) : null));
+            }
+        }
+        if ((raise.Count > 0 || Truthy("raise_transcripts")) && review is null)
+            throw new ConfigError($"{full}: raise and raise_transcripts need [review], the queue they raise items in");
         var config = new Config
         {
             Path = full,
+            HookDrafts = !raw.TryGetValue("hook_drafts", out var hd) || (hd is bool hb ? hb : throw new ConfigError($"{full}: hook_drafts should be true or false")),
+            RaiseTranscripts = List("raise_transcripts", []),
+            Raise = raise,
             Review = review,
             Workspace = workspace,
             Model = Text("model", "opus"),
@@ -219,6 +258,9 @@ public sealed class Config
         return path;
     }
 }
+
+/// <summary>A [[raise]] rule: files matching the glob are raised as items of this type.</summary>
+public sealed record RaiseRule(string Match, string Type, bool Sweep, string? Note);
 
 [Tomlyn.Serialization.TomlSerializable(typeof(TomlTable))]
 internal partial class TomlContext : Tomlyn.Serialization.TomlSerializerContext;

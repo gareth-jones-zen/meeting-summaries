@@ -97,6 +97,7 @@ public sealed class Workspace : IDisposable
         Queue = Queue,
         Notify = (title, lines) => Notified.Add((title, lines)),
         Today = () => new DateTime(2026, 11, 12),
+        Now = () => new DateTime(2026, 11, 12, 9, 30, 0),
         Exe = @"C:\tools\meeting-summaries.exe",
         BackgroundExe = @"C:\tools\meeting-summaries-background.exe",
         StartQueueRunner = () => QueueRunnerStarts++,

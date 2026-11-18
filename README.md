@@ -137,6 +137,30 @@ whatever reads the queue at the start of your day can say which transcripts have
 under a lock between processes and replaced atomically), so the tools share the file.
 
 - A transcript with no item is no error, and nothing is added. A draft written with `--out` isn't noted.
+
+### The hook can raise the items itself (1.4.0)
+
+The hook can also be what puts each new transcript in the queue, so nothing else needs to. Point doc-filer's (or any
+tool's) after-run report at it, and say which files to raise:
+
+```toml
+raise_transcripts = ["meetings/*.md", "team/*.md"]   # raised as "transcript" items: swept for dictation, and whether a draft is wanted
+hook_drafts = true                                    # false: raise them, but queue no drafts
+
+[[raise]]                                             # these instead, as items of their own (first match wins)
+match = "*/performance-reviews/????-??-review-form.md"
+type = "review-paperwork"
+[[raise]]
+match = "*/performance-reviews/????-??-review-transcript*.md"
+type = "review-transcript"
+sweep = true                                          # swept for dictation too
+note = "If the review goes on in another session, refresh its prep from this part first."
+```
+
+Each item has `arrived`, `path` (relative to the workspace), `summary_needed` (the hook drafts it), `dictation`
+(`[{line, text}]`, the candidate lines) and `title`, plus `note` from its rule. Globs are fnmatch's: `*` matches
+across folders. The hook is meant for a report of what's new or changed (doc-filer reports a file only when its
+content changed); given the same file twice, it raises it twice. Raising needs `[review]`.
 - It happens before `after_draft`; the two are independent. If the queue can't be written, the log says why and the
   draft is kept. The log has only a count.
 

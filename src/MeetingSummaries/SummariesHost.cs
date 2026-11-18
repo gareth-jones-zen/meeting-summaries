@@ -30,6 +30,7 @@ public sealed class SummariesHost
     public JobQueue Queue { get; init; } = JobQueue.Default;
     public Action<string, IReadOnlyList<string>> Notify { get; init; } = Toast.Notify;
     public Func<DateTime> Today { get; init; } = () => DateTime.Today;
+    public Func<DateTime> Now { get; init; } = () => DateTime.Now;
 
     /// <summary>meeting-summaries.exe, the console program: what a queued draft runs (with no window).</summary>
     public string Exe { get; init; } = Path.Combine(AppContext.BaseDirectory, "meeting-summaries.exe");

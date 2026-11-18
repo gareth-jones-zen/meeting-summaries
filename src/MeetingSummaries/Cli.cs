@@ -10,7 +10,7 @@ namespace MeetingSummaries;
 ///
 ///     meeting-summaries config                 create the settings file (if missing) and say where it is
 ///     meeting-summaries draft &lt;transcript&gt;     draft one, into summaries/ beside it (--out to write elsewhere)
-///     meeting-summaries hook                   for teams-transcripts' after_run: queue a draft of each new
+///     meeting-summaries hook                   for an after-run report: raise each new transcript (1.4.0) and queue a draft of each new
 ///                                              transcript, then start working through the queue
 ///     meeting-summaries check &lt;summary&gt;...     check a summary's quotes against its transcript
 ///     meeting-summaries dictation &lt;transcript&gt;...   lines that may be instructions dictated to an assistant
@@ -168,7 +168,9 @@ public static class Cli
                 ? FirstTruthy(d["path"], d["file"]) ?? ""
                 : Py.Str(item))
             .Select(p => p.Length == 0 ? "." : p);
-        var wanted = paths.Where(p => (File.Exists(p) || Directory.Exists(p)) && config.Wanted(p)).Select(PyPath.Resolve).ToList();
+        var given = paths.Where(p => File.Exists(p) || Directory.Exists(p)).Select(PyPath.Resolve).ToList();
+        Raise(config, given, log, host);
+        var wanted = config.HookDrafts ? given.Where(config.Wanted).ToList() : [];
         foreach (var transcript in wanted)
         {
             host.Queue.Add(host.DraftCommand(config, transcript), config.Workspace);
@@ -177,6 +179,46 @@ public static class Cli
         if (wanted.Count > 0 || host.Queue.Pending().Count > 0)
             host.StartQueueRunner();   // in the background, so the hook returns at once; a second runner just exits
         return 0;
+    }
+
+    /// <summary>1.4.0: each file the hook is given that the settings say to raise becomes an item in the review queue
+    /// for the next session: a [[raise]] rule's type, or a "transcript" (raise_transcripts), swept for lines dictated
+    /// to the assistant and saying whether a summary is wanted. The hook is given only what's new or changed
+    /// (doc-filer reports a file only when its content changed), so each is raised once.</summary>
+    private static void Raise(Config config, IReadOnlyList<string> files, Action<string> log, SummariesHost host)
+    {
+        if (config.Review is not { } review || (config.Raise.Count == 0 && config.RaiseTranscripts.Count == 0))
+            return;
+        var queue = review.Open();
+        var arrived = host.Now().ToString("yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+        foreach (var file in files.Where(File.Exists))
+        {
+            string rel;
+            try
+            {
+                rel = config.Relative(file);
+            }
+            catch (ArgumentException)
+            {
+                continue;
+            }
+            var rule = config.Raise.FirstOrDefault(r => Paths.FnMatch(rel, r.Match));
+            var transcript = rule is null && config.RaiseTranscripts.Any(g => Paths.FnMatch(rel, g))
+                             && !$"/{rel}".Contains($"/{config.Summaries}/", StringComparison.Ordinal);
+            if (rule is null && !transcript)
+                continue;
+            var found = rule is null || rule.Sweep ? Dictation.Find(PyStr.ReadText(file), config.Dictation) : [];
+            var dictation = new JsonArray(found.Select(f => (JsonNode)new JsonObject { ["line"] = int.Parse(f.Line, System.Globalization.CultureInfo.InvariantCulture), ["text"] = f.Text }).ToArray());
+            var fields = new JsonObject
+            {
+                ["arrived"] = arrived, ["path"] = rel, ["summary_needed"] = rule is null && config.Wanted(file), ["dictation"] = dictation,
+                ["title"] = rel,
+            };
+            if (rule?.Note is { } note)
+                fields["note"] = note;
+            queue.Add(review.Source, rule?.Type ?? "transcript", fields);
+            log($"raised {rel}" + (rule is not null ? $" ({rule.Type})" : "") + (found.Count > 0 ? $", {found.Count} dictation candidate(s)" : ""));
+        }
     }
 
     private static string? FirstTruthy(params JsonNode?[] values) =>
