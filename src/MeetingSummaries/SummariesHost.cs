@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using ClaudeHeadless;
+using M365Graph;
 using WinBackground;
 
 namespace MeetingSummaries;
@@ -46,8 +47,32 @@ public sealed class SummariesHost
     /// <summary>Starts the queue runner in the background and returns at once (a second runner just exits).</summary>
     public Action StartQueueRunner { get; init; } = () => { };
 
+    /// <summary>The calendar, for finding a meeting and its chat (1.5.0, [[share]] only). Made when first needed.</summary>
+    public Func<Config, IMeetingFinder> Meetings { get; init; } = CalendarFor;
+
+    /// <summary>Runs another tool (teams-post) from a folder, with no window and no one to answer it (stdin closed,
+    /// so it never opens a browser to sign in), and returns what it said.</summary>
+    public Func<IReadOnlyList<string>, string, Completed> RunTool { get; init; } = (argv, cwd) => Run(argv, "", cwd, TimeSpan.FromMinutes(5));
+
+    /// <summary>The real calendar: Microsoft Graph, signed in as the settings say (the shared sign-in cache).</summary>
+    public static IMeetingFinder CalendarFor(Config config)
+    {
+        var sharing = config.Sharing;
+        var graph = new GraphClient(new GraphClientOptions
+        {
+            CachePath = sharing.MsalCache ?? Graph.DefaultCachePath,
+            Tenant = sharing.Tenant,
+            LoginHint = sharing.LoginHint,
+            Scopes = sharing.GraphScopes,
+            SignInHint = "Sign in at a console with a tool that shares this sign-in, with these permissions: " + string.Join(", ", sharing.GraphScopes),
+            Log = Logger.Create(config.LogFile),
+        });
+        return new GraphMeetingFinder(graph, sharing.GraphScopes);
+    }
+
     /// <summary>Runs after_draft with the report on stdin.</summary>
-    public Func<IReadOnlyList<string>, string, string, Completed> RunAfterDraft { get; init; } = AfterDraft;
+    public Func<IReadOnlyList<string>, string, string, Completed> RunAfterDraft { get; init; } =
+        (argv, input, cwd) => Run(argv, input, cwd, TimeSpan.FromMinutes(5));
 
     /// <summary>The settings for claude-headless's own commands (run-queue, autostart), passed through.</summary>
     public HeadlessHost Headless() => new()
@@ -67,7 +92,7 @@ public sealed class SummariesHost
         using var _ = Process.Start(info);
     };
 
-    private static Completed AfterDraft(IReadOnlyList<string> argv, string input, string cwd)
+    private static Completed Run(IReadOnlyList<string> argv, string input, string cwd, TimeSpan timeout)
     {
         var info = new ProcessStartInfo(argv[0])
         {
@@ -88,10 +113,10 @@ public sealed class SummariesHost
         var error = process.StandardError.ReadToEndAsync();
         process.StandardInput.Write(input);
         process.StandardInput.Close();
-        if (!process.WaitForExit(TimeSpan.FromMinutes(5)))
+        if (!process.WaitForExit(timeout))
         {
             process.Kill(entireProcessTree: true);
-            throw new TimeoutException($"Command {string.Join(' ', argv)} timed out after 300 seconds");
+            throw new TimeoutException($"Command {string.Join(' ', argv)} timed out after {timeout.TotalSeconds:0} seconds");
         }
         process.WaitForExit();
         return new Completed(process.ExitCode, output.Result.Replace("\r\n", "\n"), error.Result.Replace("\r\n", "\n"));

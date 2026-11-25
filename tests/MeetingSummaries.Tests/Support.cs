@@ -67,6 +67,13 @@ public sealed class Workspace : IDisposable
     public int QueueRunnerStarts { get; set; }
     public FakeClaude Claude { get; set; } = new(DraftReply);
 
+    /// <summary>The calendar, faked (1.5.0): what Find returns, and each meeting asked for.</summary>
+    public FakeMeetings Meetings { get; } = new();
+
+    /// <summary>teams-post, faked: never run for real. Each run's argv and folder; ToolExit is what it answers.</summary>
+    public List<(IReadOnlyList<string> Argv, string Cwd)> ToolRuns { get; } = [];
+    public int ToolExit { get; set; }
+
     public Workspace(string extraSettings = "")
     {
         Directory.CreateDirectory(Path.Combine(Work, "meetings", "alex"));
@@ -101,6 +108,12 @@ public sealed class Workspace : IDisposable
         Exe = @"C:\tools\meeting-summaries.exe",
         BackgroundExe = @"C:\tools\meeting-summaries-background.exe",
         StartQueueRunner = () => QueueRunnerStarts++,
+        Meetings = _ => Meetings,
+        RunTool = (argv, cwd) =>
+        {
+            ToolRuns.Add((argv, cwd));
+            return new Completed(ToolExit, ToolExit == 0 ? "Sent 1763370000001.\nRead back OK.\n" : "Not sent (fake)\n", "");
+        },
         RunAfterDraft = (argv, input, cwd) =>
         {
             AfterDrafts.Add((argv, input, cwd));
@@ -134,5 +147,18 @@ public sealed class FakeClaude(string? reply, Exception? error = null) : IClaude
         if (error is not null)
             throw error;
         return new JsonObject { ["result"] = reply?.Replace("\r\n", "\n"), ["num_turns"] = 3, ["session_id"] = "s1" };
+    }
+}
+
+/// <summary>The calendar, faked: never read for real in a test.</summary>
+public sealed class FakeMeetings : IMeetingFinder
+{
+    public MeetingInfo? Answer { get; set; }
+    public List<MeetingRef> Asked { get; } = [];
+
+    public MeetingInfo? Find(MeetingRef meeting)
+    {
+        Asked.Add(meeting);
+        return Answer;
     }
 }

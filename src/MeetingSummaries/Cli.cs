@@ -15,7 +15,9 @@ namespace MeetingSummaries;
 ///     meeting-summaries check &lt;summary&gt;...     check a summary's quotes against its transcript
 ///     meeting-summaries dictation &lt;transcript&gt;...   lines that may be instructions dictated to an assistant
 ///     meeting-summaries autostart on           work through queued drafts every 15 minutes (off, status)
-///     meeting-summaries run-queue              work through queued drafts now (what the hook and the task run)</summary>
+///     meeting-summaries run-queue              work through queued drafts now (what the hook and the task run)
+///     meeting-summaries share summary &lt;summary&gt; [--yes]   preview (or post) a finalised summary's attendee version
+///                                              to its meeting's chat, if a [[share]] rule opts the meeting in (1.5.0)</summary>
 public static class Cli
 {
     /// <summary>From the build (Directory.Build.props, or the release's -p:Version from its tag).</summary>
@@ -23,23 +25,27 @@ public static class Cli
         .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(Cli).Assembly)?.InformationalVersion ?? "unknown";
 
     public const string Usage = """
-        usage: meeting-summaries [-h] [--version] [--config CONFIG] {config,draft,hook,check,dictation,autostart,run-queue} ...
+        usage: meeting-summaries [-h] [--version] [--config CONFIG] {config,draft,hook,check,dictation,autostart,run-queue,share} ...
 
         meeting-summaries: a draft summary of each meeting transcript, written by Claude Code for you to review.
 
             meeting-summaries config                 create the settings file (if missing) and say where it is
             meeting-summaries draft <transcript>     draft one, into summaries/ beside it (--out to write elsewhere)
-            meeting-summaries hook                   for teams-transcripts' after_run: queue a draft of each new
-                                                     transcript, then start working through the queue
+            meeting-summaries hook                   for an after-run report: post opted-in transcripts to their
+                                                     meeting's chat, raise each new transcript, queue a draft of
+                                                     each, then start working through the queue
             meeting-summaries check <summary>...     check a summary's quotes against its transcript
             meeting-summaries dictation <transcript>...   lines that may be instructions dictated to an assistant
             meeting-summaries autostart on           work through queued drafts every 15 minutes (off, status)
             meeting-summaries run-queue              work through queued drafts now
+            meeting-summaries share summary <summary> [--yes]
+                                                     preview (or, with --yes, post) a finalised summary's attendee
+                                                     version to its meeting's chat, if a [[share]] rule opts it in
         """;
 
     private static int Bad(SummariesHost host, string message)
     {
-        host.Err.WriteLine("usage: meeting-summaries [-h] [--version] [--config CONFIG] {config,draft,hook,check,dictation,autostart,run-queue} ...");
+        host.Err.WriteLine("usage: meeting-summaries [-h] [--version] [--config CONFIG] {config,draft,hook,check,dictation,autostart,run-queue,share} ...");
         host.Err.WriteLine($"meeting-summaries: error: {message}");
         return 2;
     }
@@ -94,11 +100,13 @@ public static class Cli
                 return HeadlessCli.Run(["autostart", rest[0]], host.Headless());
             case "run-queue":
                 return rest.Count > 0 ? Bad(host, $"unrecognized arguments: {string.Join(' ', rest)}") : HeadlessCli.Run(["run-queue"], host.Headless());
+            case "share":
+                return ShareCommand(rest, configPath, host);
             case "hook":
             case "draft":
                 break;
             default:
-                return Bad(host, $"argument command: invalid choice: '{command}' (choose from 'config', 'draft', 'hook', 'check', 'dictation', 'autostart', 'run-queue')");
+                return Bad(host, $"argument command: invalid choice: '{command}' (choose from 'config', 'draft', 'hook', 'check', 'dictation', 'autostart', 'run-queue', 'share')");
         }
 
         string? transcriptArg = null, outArg = null;
@@ -169,6 +177,15 @@ public static class Cli
                 : Py.Str(item))
             .Select(p => p.Length == 0 ? "." : p);
         var given = paths.Where(p => File.Exists(p) || Directory.Exists(p)).Select(PyPath.Resolve).ToList();
+        try
+        {
+            Share.Transcripts(config, given, log, host);   // 1.5.0: only with [[share]] rules; never stops the rest
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            log($"sharing transcripts failed: {error.Message}");
+            host.Notify("Posting a transcript failed", [error.Message, $"Log: {config.LogFile}"]);
+        }
         Raise(config, given, log, host);
         var wanted = config.HookDrafts ? given.Where(config.Wanted).ToList() : [];
         foreach (var transcript in wanted)
@@ -219,6 +236,26 @@ public static class Cli
             queue.Add(review.Source, rule?.Type ?? "transcript", fields);
             log($"raised {rel}" + (rule is not null ? $" ({rule.Type})" : "") + (found.Count > 0 ? $", {found.Count} dictation candidate(s)" : ""));
         }
+    }
+
+    /// <summary>share summary &lt;summary&gt; [--yes].</summary>
+    private static int ShareCommand(List<string> rest, string? configPath, SummariesHost host)
+    {
+        var yes = rest.Remove("--yes");
+        if (rest.Count != 2 || rest[0] != "summary" || rest[1].StartsWith('-'))
+            return Bad(host, "usage: meeting-summaries share summary <summary> [--yes]");
+        Config config;
+        try
+        {
+            config = Config.Load(configPath, host.Env);
+        }
+        catch (ConfigError error)
+        {
+            host.Err.WriteLine(error.Message);
+            return 2;
+        }
+        var log = Logger.Create(config.LogFile, null, stampEcho: false);
+        return Share.Summary(config, rest[1], yes, log, host);
     }
 
     private static string? FirstTruthy(params JsonNode?[] values) =>

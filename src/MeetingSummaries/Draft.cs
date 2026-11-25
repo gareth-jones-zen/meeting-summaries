@@ -238,6 +238,8 @@ public static partial class Draft
             throw new ClaudeRunException("the reply wasn't a draft summary: " + PyStr.Head(text, 200));
         text = WithQuoteCheck(PyStr.RStrip(text[start..]) + "\n", every);
         (text, var dictated) = WithDictation(text, every, config);
+        if (output is null)
+            text = Share.CarryInto(config, text, rel);   // a transcript already posted to the meeting's chat (1.5.0)
         Directory.CreateDirectory(Paths.Parent(target));
         PyStr.WriteText(target, text);
         var added = output is not null ? 0 : AddToLedger(config, text, target, host.Today());

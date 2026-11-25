@@ -39,6 +39,16 @@ public sealed class ConfigError(string message, bool missing = false) : Exceptio
 ///     type = "review-paperwork"         #   the item's type
 ///     sweep = false                     #   sweep it for dictation too
 ///     note = "Add the review's row."    #   optional: a note on the item
+///     [[share]]                         # optional (1.5.0): post an opted-in meeting's transcript and summary to its
+///     series = "^weekly-sync$"          #   Teams chat; series (its folder) or title, regular expressions
+///     transcript = true                 #   post the transcript when the hook is given it
+///     summary = true                    #   `share summary` may post the summary's attendee version
+///     why = "..."                       #   (also organiser, key_points, file, external; see the README)
+///     teams_post = ["teams-post.exe", "--config", "teams-post.toml"]   # needed with [[share]]
+///     never_terms = ['\bsecret\b']      # optional: anything matching is never posted
+///     org_domains = ["example.com"]     # an attendee outside these is external
+///     share_name = "Alex"               # the summary's footer: "by Alex's assistant, checked by Alex"
+///     login_hint, tenant, msal_cache, graph_scopes   # signing in to read the calendar (with [[share]] only)
 ///
 /// Paths may use ~ and %VARIABLES%.</summary>
 public sealed class Config
@@ -48,6 +58,8 @@ public sealed class Config
     [
         "workspace", "model", "owner", "template", "style", "context", "ledger", "include", "exclude", "summaries", "log_file",
         "after_draft", "review", "dictation", "timeout_minutes", "hook_drafts", "raise_transcripts", "raise",
+        "share", "never_terms", "share_name", "org_domains", "teams_post", "share_state", "share_folder",
+        "login_hint", "tenant", "msal_cache", "graph_scopes",
     ];
 
     public const string Template = """
@@ -86,6 +98,9 @@ public sealed class Config
 
     /// <summary>[[raise]]: files `hook` raises as items of their own, checked before RaiseTranscripts, first match wins.</summary>
     public IReadOnlyList<RaiseRule> Raise { get; init; } = [];
+
+    /// <summary>1.5.0: posting opted-in meetings' transcripts and summaries to their chats ([[share]] and the rest).</summary>
+    public ShareSettings Sharing { get; init; } = ShareSettings.None;
 
     /// <summary>Null: the defaults in Dictation.Names. Empty: the sweep is off.</summary>
     public IReadOnlyList<string>? Dictation { get; init; }
@@ -197,6 +212,9 @@ public sealed class Config
                 raise.Add(new RaiseRule(match, type, sweep, rule.TryGetValue("note", out var n) ? Str(n) : null));
             }
         }
+        var owner = Text("owner", "You");
+        var sharing = ShareSettings.Read(raw, full, value => PathValue(value, folder, env), env, owner,
+            System.IO.Path.Combine(env("LOCALAPPDATA") ?? PyPath.Home(env), "meeting-summaries"));
         if ((raise.Count > 0 || Truthy("raise_transcripts")) && review is null)
             throw new ConfigError($"{full}: raise and raise_transcripts need [review], the queue they raise items in");
         var config = new Config
@@ -208,7 +226,8 @@ public sealed class Config
             Review = review,
             Workspace = workspace,
             Model = Text("model", "opus"),
-            Owner = Text("owner", "You"),
+            Owner = owner,
+            Sharing = sharing,
             TemplateFile = Truthy("template") ? PathValue(Text("template", ""), workspace, env) : null,
             Style = style,
             Context = List("context", []),
