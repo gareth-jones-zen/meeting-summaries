@@ -12,7 +12,7 @@ public sealed class ShareTests : IDisposable
 {
     private const string Chat = "19:meeting_weeklysync000000000000@thread.v2";
 
-    private const string Settings = """
+    private static readonly string Settings = """
         teams_post = ["C:/tools/teams-post.exe", "--config", "teams-post.toml"]
         never_terms = ['\bbluebird\b', 'project\s+heron']
         org_domains = ["example.com"]
@@ -24,18 +24,18 @@ public sealed class ShareTests : IDisposable
         file = "pending.json"
         source = "transcripts"
 
-        """;
+        """.Replace("\r\n", "\n");
 
-    private const string Rule = """
+    private static readonly string Rule = """
         [[share]]
         series = '^weekly-sync$'
         transcript = true
         summary = true
         why = "The team asked for the record of the weekly sync."
 
-        """;
+        """.Replace("\r\n", "\n");
 
-    private const string TranscriptText = """
+    private static readonly string TranscriptText = """
         **Weekly sync-20261112_090000UTC-Meeting Recording**
 
         12 November 2026, 09:00am
@@ -46,9 +46,9 @@ public sealed class ShareTests : IDisposable
         **Sam Jones** 0:20
         I'll write up the plan by Friday.
 
-        """;
+        """.Replace("\r\n", "\n");
 
-    private const string Finalised = """
+    private static readonly string Finalised = """
         ---
         date: 2026-11-12
         title: Weekly sync
@@ -88,7 +88,7 @@ public sealed class ShareTests : IDisposable
 
         - Pat was on mute.
 
-        """;
+        """.Replace("\r\n", "\n");
 
     private readonly Workspace ws;
 
